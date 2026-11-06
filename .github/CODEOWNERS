@@ -1,0 +1,15 @@
+# Sustituir @usuario-* por los usuarios reales de GitHub del equipo.
+/backend/commandflow/lexer.py      @usuario-lenguaje
+/backend/commandflow/parser.py     @usuario-lenguaje
+/backend/commandflow/tokens.py     @usuario-lenguaje
+/backend/commandflow/ast_nodes.py  @usuario-lenguaje
+/backend/commandflow/semantic.py   @usuario-semantica
+/backend/commandflow/symbols.py    @usuario-semantica
+/backend/commandflow/ir.py         @usuario-semantica
+/backend/commandflow/optimizer.py  @usuario-semantica
+/backend/commandflow/vm.py         @usuario-semantica
+/backend/app/                      @usuario-backend
+/frontend/                         @usuario-frontend
+/docker-compose.yml                @usuario-devops
+/.github/                          @usuario-devops
+/docs/                             @usuario-docs
