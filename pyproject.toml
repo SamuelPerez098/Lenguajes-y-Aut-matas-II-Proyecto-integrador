@@ -1,0 +1,9 @@
+[project]
+name = "commandflow-core"
+version = "0.1.0"
+description = "Núcleo del lenguaje CommandFlow: lexer, parser, semántico, IR, optimizador y máquina virtual"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
