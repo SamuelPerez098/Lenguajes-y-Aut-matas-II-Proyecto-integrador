@@ -1,0 +1,160 @@
+ID,Titulo,Rol,Responsable,Revisor,Tamano,Sprint,Estado,Depende,Entregable,Criterios
+OPS-01,Crear repositorio y proteger ramas,OPS,Hernández Velasco Sandra Marely,Ruiz Durán Emiliano,S,0,Pendiente,-,Repositorio configurado,"Existen `main` y `develop`; `develop` es la rama por defecto de trabajo
+`main` y `develop` exigen Pull Request, 1 aprobación y CI en verde
+`.github/CODEOWNERS` tiene los usuarios reales del equipo
+Todos los integrantes pueden clonar, crear rama y abrir PR"
+OPS-02,Configurar tablero Kanban e importar tarjetas,OPS,Hernández Velasco Sandra Marely,Ruiz Durán Emiliano,S,0,Pendiente,OPS-01,Tablero con todas las tarjetas,"Columnas: Backlog, Listo, En progreso, En revisión, Hecho
+Etiquetas por rol (`rol:LEX`…) y por sprint (`sprint:1`…)
+Tarjetas creadas con `scripts/import_cards.py` o importando `docs/kanban_tarjetas.csv`
+Cada tarjeta tiene responsable asignado"
+OPS-03,Integración continua (CI),OPS,Ruiz Durán Emiliano,Pérez Ramírez Samuel,S,1,Base entregada: revisar y defender,OPS-01,.github/workflows/ci.yml,"Cada PR ejecuta `pytest` del backend, `npm run build` del frontend y `docker compose build`
+Un PR con una prueba rota no se puede fusionar
+El estado del CI se muestra en el PR"
+OPS-04,Docker Compose del sistema completo,OPS,Gómez Vasquez Fredy Azarel,Martínez González Ricardo,M,3,Base entregada: revisar y defender,"API-01, UI-01","docker-compose.yml, Dockerfiles","`docker compose up --build` levanta postgres, mailpit, backend y frontend sin pasos manuales
+El backend espera a que PostgreSQL esté saludable (healthcheck)
+Tras `docker compose down` (sin `-v`) los dispositivos conservan su estado
+Interfaz en :8080, Swagger en :8000/docs y Mailpit en :8025"
+OPS-05,Prueba de extremo a extremo documentada,OPS,Ruiz Durán Emiliano,Pérez Ramírez Samuel,M,4,Pendiente,OPS-04,docs/PRUEBAS_E2E.md con capturas,"Se ejecutan en Docker los 13 escenarios obligatorios de la sección 16 del enunciado
+Cada escenario tiene entrada, resultado esperado, resultado real y captura
+El correo de prueba aparece en la bandeja de Mailpit
+Los defectos encontrados quedan como tarjetas con etiqueta `bug`"
+OPS-06,Prueba de concurrencia,OPS,Pérez Ramírez Samuel,Ruiz Durán Emiliano,S,4,Pendiente,API-04,scripts/prueba_concurrencia.py,"20 peticiones simultáneas a `/api/commands` terminan sin error 5xx
+El estado final de los dispositivos es coherente con el orden registrado en `state_events`
+El resultado se documenta"
+OPS-07,Fijar versiones de imágenes y dependencias,OPS,Hernández Velasco Sandra Marely,Ruiz Durán Emiliano,S,4,Pendiente,OPS-04,Compose y requirements fijados,"`axllent/mailpit` y las demás imágenes usan una etiqueta de versión concreta
+`requirements.txt` tiene versiones acotadas
+El sistema sigue levantando desde cero"
+LEX-01,Definir tokens y gramática EBNF,LEX,Ruiz Durán Emiliano,Pérez Ramírez Samuel,M,0,Base entregada: revisar y defender,-,docs/DOCUMENTACION_TECNICA.md §3-§4,"Cada regla de la gramática tiene un ejemplo válido y uno inválido
+Se justifica por qué la gramática es LL(1) (conjuntos PRIMEROS)
+Tabla de tokens completa con lexema y ejemplo
+Todo el equipo aprueba la gramática antes de modificar el código"
+LEX-02,Analizador léxico,LEX,Ruiz Durán Emiliano,Pérez Ramírez Samuel,M,1,Base entregada: revisar y defender,LEX-01,backend/commandflow/lexer.py,"Reconoce palabras reservadas sin distinguir mayúsculas, identificadores, cadenas, números, `==` y `!=`
+Ignora espacios y comentarios `#`
+Error léxico con línea y columna para: carácter inválido, cadena sin cerrar, `=` suelto, `1led`
+Al menos 15 pruebas en `tests/test_lexer.py`"
+LEX-03,Analizador sintáctico,LEX,Ruiz Durán Emiliano,Pérez Ramírez Samuel,L,1,Base entregada: revisar y defender,LEX-02,backend/commandflow/parser.py,"Una función por regla gramatical (descenso recursivo)
+Soporta ejecución multilínea, líneas vacías y anidamiento de `SI` y `REPETIR`
+Cada error indica qué se esperaba y qué se encontró, con posición
+Al menos 15 pruebas de error en `tests/test_parser.py`"
+LEX-04,AST y serialización,LEX,Ruiz Durán Emiliano,Pérez Ramírez Samuel,S,1,Base entregada: revisar y defender,LEX-03,backend/commandflow/ast_nodes.py,"Un nodo por construcción del lenguaje
+`to_dict()` y `pretty()` funcionan para cualquier programa
+La igualdad de nodos ignora línea y columna"
+LEX-05,Extensión: SINO en el condicional,LEX,Ruiz Durán Emiliano,Pérez Ramírez Samuel,M,3,Pendiente,"LEX-03, SEM-03","Gramática, parser, IR y pruebas","`SI cond ENTONCES instr SINO instr` se reconoce y se documenta en la EBNF
+El IR usa un salto incondicional y etiquetas; el optimizador sigue siendo correcto
+`pytest` completo en verde, incluida la prueba de equivalencia aleatoria
+Error claro si falta la instrucción tras `SINO`"
+LEX-06,Extensión: condiciones compuestas Y / O,LEX,Ruiz Durán Emiliano,Pérez Ramírez Samuel,M,3,Pendiente,LEX-05,"Gramática, parser, semántica, IR","`SI led1 == ENCENDIDO Y alarma1 == ACTIVADA ENTONCES …` funciona
+Se define y documenta la precedencia de Y sobre O
+Pruebas de las cuatro combinaciones de verdad"
+LEX-07,Extensión: comillas escapadas en cadenas,LEX,Ruiz Durán Emiliano,Pérez Ramírez Samuel,S,4,Pendiente,LEX-02,lexer.py y pruebas,"`NOTIFICAR ""dijo \""hola\""""` produce el mensaje `dijo ""hola""`
+Una barra invertida al final de la cadena da error léxico claro"
+SEM-01,Tabla de símbolos y tipos de dispositivo,SEM,Pérez Ramírez Samuel,Ruiz Durán Emiliano,S,1,Base entregada: revisar y defender,LEX-01,backend/commandflow/symbols.py,"Tipos LED, ALARMA y BAILARIN (Doro, que sustituye al ventilador) con operaciones y estados permitidos (BAILAR/DETENER, BAILANDO/DETENIDO)
+`snapshot()` y `restore()` serializan y reconstruyen la tabla
+No se puede declarar un dispositivo duplicado ni con estado inválido"
+SEM-02,Validaciones semánticas,SEM,Pérez Ramírez Samuel,Ruiz Durán Emiliano,M,2,Base entregada: revisar y defender,"SEM-01, LEX-04",backend/commandflow/semantic.py,"Se aplican las 7 reglas de la documentación §7
+Se reportan todos los errores semánticos de un programa, cada uno con su línea
+`ENCENDER alarma1` indica las operaciones permitidas de una alarma
+Un programa con cualquier error no ejecuta ninguna instrucción
+Correo: formato válido (máx. 254 caracteres, sin espacios) y mensaje no vacío de máx. 1000 caracteres; lo mismo para NOTIFICAR"
+SEM-03,Generador de código intermedio,SEM,Pérez Ramírez Samuel,Ruiz Durán Emiliano,M,2,Base entregada: revisar y defender,SEM-02,backend/commandflow/ir.py,"Genera `GET_STATE`, `COMPARE`, `JUMP_IF_FALSE`, `SET_STATE`, `QUERY`, `LIST_DEVICES`, `NOTIFY`, `SEND_EMAIL`, `HALT`
+El condicional usa etiquetas simbólicas; `REPETIR` se desenrolla
+Pruebas que comparan el IR generado con el IR esperado"
+SEM-04,Optimización 1: instrucciones redundantes,SEM,Pérez Ramírez Samuel,Ruiz Durán Emiliano,S,3,Base entregada: revisar y defender,SEM-03,backend/commandflow/optimizer.py,"Elimina `SET_STATE` cuando el estado ya es conocido en la región
+El conocimiento se descarta en cada etiqueta
+Se documenta por qué conserva el comportamiento observable"
+SEM-05,Optimización 2: asignaciones sobrescritas,SEM,Pérez Ramírez Samuel,Ruiz Durán Emiliano,M,3,Base entregada: revisar y defender,SEM-04,backend/commandflow/optimizer.py,"Elimina la asignación sobrescrita sin lecturas intermedias
+No elimina si hay lectura del dispositivo, listado, notificación, correo, salto o etiqueta entre ambas
+El equipo decide y documenta si la bitácora de transiciones forma parte del comportamiento observable"
+SEM-06,Máquina virtual,SEM,Pérez Ramírez Samuel,Ruiz Durán Emiliano,M,3,Base entregada: revisar y defender,SEM-03,backend/commandflow/vm.py,"Ejecuta todas las instrucciones del IR con contador de programa y etiquetas
+`SET_STATE` solo registra un evento cuando el estado cambia
+Límite de pasos y error de ejecución claro si falla el correo"
+SEM-07,Prueba de equivalencia del optimizador,SEM,Pérez Ramírez Samuel,Ruiz Durán Emiliano,S,3,Base entregada: revisar y defender,SEM-05,backend/tests/test_equivalence.py,"Compara estados, salidas y correos con y sin optimización en cientos de programas aleatorios
+Falla si el optimizador no reduce el IR en un número mínimo de casos
+Todos los integrantes saben ejecutarla y explicarla"
+SEM-08,Extensión: nuevo tipo de dispositivo PUERTA,SEM,Pérez Ramírez Samuel,Ruiz Durán Emiliano,M,4,Pendiente,SEM-02,"tokens, parser, symbols, semantic, vm","`ABRIR puerta1` y `CERRAR puerta1` funcionan; `ENCENDER puerta1` da error semántico
+La interfaz muestra la puerta sin cambiar el backend más que su tabla de tipos
+Pruebas nuevas y gramática actualizada"
+SEM-09,Extensión: tercera optimización (condiciones conocidas),SEM,Pérez Ramírez Samuel,Ruiz Durán Emiliano,M,4,Pendiente,SEM-05,optimizer.py y pruebas,"Si el estado de un dispositivo es conocido en la región, la condición se resuelve y se elimina el salto o el cuerpo
+La prueba de equivalencia aleatoria sigue pasando
+Se documenta con ejemplo antes y después"
+API-01,Modelo de datos y datos iniciales,API,Gómez Vasquez Fredy Azarel,Martínez González Ricardo,M,1,Base entregada: revisar y defender,SEM-01,"backend/app/models.py, db.py","Tablas `devices`, `command_history`, `state_events` y `sent_emails`
+Se crean al arrancar y se siembran los 4 dispositivos si la tabla está vacía
+Reintenta la conexión mientras PostgreSQL arranca
+Diagrama entidad-relación incluido en la documentación"
+API-02,Endpoint de ejecución de programas,API,Gómez Vasquez Fredy Azarel,Martínez González Ricardo,M,2,Base entregada: revisar y defender,"API-01, SEM-06",POST /api/commands,"Devuelve ok, errores, salidas, eventos, dispositivos y compilación (tokens, AST, IR, optimizaciones)
+Los errores del lenguaje devuelven HTTP 200 con `ok=false`
+Un programa de más de 5000 caracteres devuelve 422"
+API-03,Endpoints de consulta y administración,API,Gómez Vasquez Fredy Azarel,Martínez González Ricardo,M,2,Base entregada: revisar y defender,API-02,backend/app/main.py,"`/api/compile` valida sin ejecutar ni guardar nada
+`/api/devices`, `/api/history`, `/api/events`, `/api/emails` con límite configurable
+`POST /api/devices/reset` y `DELETE /api/history` funcionan
+Swagger en `/docs` documenta todos con sus esquemas"
+API-04,Persistencia y control de concurrencia,API,Gómez Vasquez Fredy Azarel,Martínez González Ricardo,M,3,Base entregada: revisar y defender,API-02,backend/app/service.py,"El estado sobrevive al reinicio de la aplicación
+Cada ejecución ocurre en una transacción con `SELECT … FOR UPDATE`
+Si el programa falla a mitad por un error de ejecución, los efectos ya aplicados se guardan y se informan"
+API-05,Integración SMTP con Mailpit,API,Gómez Vasquez Fredy Azarel,Martínez González Ricardo,S,3,Base entregada: revisar y defender,SEM-06,backend/commandflow/services.py,"`ENVIAR CORREO` entrega el mensaje a Mailpit y se ve en :8025
+Si el SMTP falla, la respuesta trae un error de ejecución claro
+Cada intento queda en `sent_emails` con `status` (sent o failed) y el motivo del fallo
+`backend/tests/test_smtp.py` prueba el envío real contra un servidor SMTP falso por red"
+API-06,Pruebas de la API,API,Gómez Vasquez Fredy Azarel,Martínez González Ricardo,M,3,Base entregada: revisar y defender,API-03,backend/tests/test_api.py,"Cubre ejecución, persistencia, errores léxico, sintáctico y semántico, correo, historial y reinicio
+Corren sobre SQLite temporal sin depender de Docker
+Al menos 20 pruebas en verde"
+API-07,Extensión: migraciones con Alembic,API,Gómez Vasquez Fredy Azarel,Martínez González Ricardo,M,4,Pendiente,API-01,backend/alembic/,"Migración inicial equivalente al modelo actual
+El contenedor aplica las migraciones al arrancar
+Se documenta cómo crear una migración nueva"
+API-08,Extensión: filtros y paginación del historial,API,Ruiz Durán Emiliano,Pérez Ramírez Samuel,S,4,Pendiente,API-03,GET /api/history,"Parámetros `ok`, `desde`, `hasta` y `offset`
+Pruebas para cada filtro
+La interfaz permite filtrar solo los errores"
+API-09,Notificaciones registradas y expuestas (sección 5.2),API,Gómez Vasquez Fredy Azarel,Martínez González Ricardo,S,3,Base entregada: revisar y defender,API-02,"models.py, service.py, GET /api/notifications","`NOTIFICAR ""Prueba""` responde `Notificación registrada: Prueba` y guarda el mensaje en la tabla `notifications`
+`GET /api/notifications` devuelve las más recientes primero
+`DELETE /api/history` también borra las notificaciones
+Prueba de API que cubre el caso del enunciado"
+API-10,Extensión: proveedor SMTP externo con autenticación,API,Gómez Vasquez Fredy Azarel,Martínez González Ricardo,M,4,Pendiente,API-05,"services.py, docker-compose.yml, docs","Siguiendo `docs/CORREO_REAL.md`, con `SMTP_USER`, `SMTP_PASSWORD` y `SMTP_STARTTLS=true` el correo llega a una bandeja real (cuenta de prueba del equipo)
+`python scripts/probar_correo.py destino` muestra OK y el mensaje se recibe
+Las credenciales viven solo en `.env` y nunca se suben al repositorio
+Se documenta el procedimiento y el resultado de la prueba con capturas"
+UI-01,Esqueleto del frontend y cliente de la API,UI,Martínez González Ricardo,Gómez Vasquez Fredy Azarel,S,1,Base entregada: revisar y defender,API-01,"frontend/src/App.jsx, api.js","`npm run dev` muestra la aplicación y se conecta a la API por el proxy de Vite
+Indicador visible de API conectada o sin conexión
+Las rutas son relativas, así funcionan igual en Docker"
+UI-02,Editor con numeración y marcado de errores,UI,Martínez González Ricardo,Gómez Vasquez Fredy Azarel,M,2,Base entregada: revisar y defender,UI-01,components/Editor.jsx,"Numeración de líneas; la línea con error se marca en rojo
+Ctrl+Enter ejecuta; hay botones Ejecutar, Validar y Limpiar
+Lista de ejemplos con los 13 escenarios de la sección 16, más Doro y notificaciones"
+UI-03,Panel de dispositivos animado,UI,Martínez González Ricardo,Gómez Vasquez Fredy Azarel,M,2,Base entregada: revisar y defender,UI-01,components/DeviceCard.jsx,"El LED brilla y la alarma parpadea cuando están activos; Doro reproduce el GIF al bailar y se queda en su primer fotograma al detenerse
+El panel se actualiza con cada ejecución sin recargar la página
+Botón para reiniciar los dispositivos"
+UI-04,Consola de resultados,UI,Martínez González Ricardo,Gómez Vasquez Fredy Azarel,S,2,Base entregada: revisar y defender,UI-02,components/ResultPanel.jsx,"Muestra salidas, cambios de estado y mensaje de éxito con colores distintos
+Los errores muestran tipo, línea, columna, la línea de código y un cursor `^`"
+UI-05,"Pestañas técnicas: tokens, AST, IR y optimizaciones",UI,Martínez González Ricardo,Gómez Vasquez Fredy Azarel,M,3,Base entregada: revisar y defender,UI-04,components/Tabs.jsx,"Tokens con línea y columna, AST, IR e IR optimizado
+Optimizaciones: cuántas instrucciones se eliminaron y por qué
+Si hay error muestra un mensaje en lugar de datos vacíos"
+UI-06,"Historial, eventos y correos",UI,Martínez González Ricardo,Gómez Vasquez Fredy Azarel,M,3,Base entregada: revisar y defender,"UI-05, API-03",components/Tabs.jsx,"Historial con resultado OK o Error; un clic recarga el programa en el editor
+Bitácora de eventos de estado y lista de correos con enlace a Mailpit
+Botón para borrar el historial"
+UI-10,Avisos de notificación y estado de correos (sección 5.2),UI,Martínez González Ricardo,Gómez Vasquez Fredy Azarel,S,3,Base entregada: revisar y defender,"UI-06, API-09","App.jsx, components/Tabs.jsx","Cada `NOTIFICAR` ejecutado muestra un `alert()` del navegador con el mensaje; varias notificaciones de una misma ejecución se agrupan en un solo aviso
+La pestaña Notificaciones lista las guardadas en la base de datos
+La pestaña Correos indica si cada envío fue entregado o falló y muestra el motivo"
+UI-07,Extensión: resaltado de sintaxis en el editor,UI,Martínez González Ricardo,Gómez Vasquez Fredy Azarel,M,4,Pendiente,UI-02,components/Editor.jsx,"Colores distintos para palabras reservadas, estados, cadenas y comentarios
+El texto y el resaltado no se desfasan al desplazarse
+Funciona en modo claro y oscuro"
+UI-08,Extensión: visor gráfico del AST,UI,Martínez González Ricardo,Gómez Vasquez Fredy Azarel,L,4,Pendiente,UI-05,components/AstTree.jsx,"Árbol colapsable con un nodo por construcción del lenguaje
+Se actualiza en cada ejecución o validación
+Se usa en la exposición para explicar el análisis sintáctico"
+UI-09,Extensión: historial de comandos con flechas,UI,Martínez González Ricardo,Gómez Vasquez Fredy Azarel,S,4,Pendiente,UI-02,components/Editor.jsx,"Con el editor vacío, ↑ y ↓ recorren los programas anteriores
+No interfiere con la edición normal del texto"
+DOC-01,"Acta de constitución, alcance y riesgos",DOC,Hernández Velasco Sandra Marely,Ruiz Durán Emiliano,S,0,Pendiente,-,docs/ACTA.md,"Alcance incluido y excluido (no es un asistente de IA)
+Roles, responsables, calendario y canales de comunicación
+Al menos 5 riesgos con mitigación"
+DOC-02,Documentación técnica del lenguaje,DOC,Hernández Velasco Sandra Marely,Ruiz Durán Emiliano,M,4,Base entregada: revisar y defender,"LEX-01, SEM-05",docs/DOCUMENTACION_TECNICA.md,"Gramática, tokens, AST, tabla de símbolos, IR, optimizaciones y VM documentados
+Refleja las decisiones del equipo (por ejemplo, sobre la bitácora)
+Cada integrante revisó el capítulo de su módulo
+Incluye la sección 13 (notificaciones y correo) y los créditos del GIF de Doro"
+DOC-03,Manual de usuario,DOC,Hernández Velasco Sandra Marely,Ruiz Durán Emiliano,M,4,Pendiente,UI-06,docs/MANUAL_USUARIO.md,"Guía de instalación con Docker en pocos pasos
+Referencia de cada instrucción con ejemplo y resultado
+Errores frecuentes y cómo corregirlos, con capturas"
+DOC-04,Guion de la demostración y exposición,DOC,Hernández Velasco Sandra Marely,Ruiz Durán Emiliano,M,4,Pendiente,OPS-05,docs/GUION_DEMO.md,"Duración definida y tiempos por persona
+Casos: éxito, los tres tipos de error, optimización antes y después, correo en Mailpit y persistencia tras reiniciar
+Ensayo completo con el sistema levantado desde cero"
+DOC-05,Informe final y matriz de trazabilidad,DOC,Hernández Velasco Sandra Marely,Ruiz Durán Emiliano,M,4,Pendiente,DOC-02,docs/INFORME_FINAL.md,"Matriz requisito del enunciado → tarjeta → prueba o evidencia
+Decisiones de diseño y limitaciones conocidas
+Reparto real del trabajo por integrante"
+DOC-06,Retrospectiva por sprint,DOC,Hernández Velasco Sandra Marely,Ruiz Durán Emiliano,S,1,Pendiente,-,docs/retrospectivas.md,"Una entrada por sprint: qué salió bien, qué mejorar y acciones concretas
+Las acciones se convierten en tarjetas"

@@ -1,0 +1,9 @@
+# Demo de CommandFlow
+ENCENDER led1
+ENCENDER led1
+CONSULTAR led1
+SI led1 == ENCENDIDO ENTONCES APAGAR led2
+REPETIR 3 VECES NOTIFICAR "Hola"
+DESACTIVAR alarma1
+LISTAR DISPOSITIVOS
+ENVIAR CORREO A "usuario@ejemplo.com" MENSAJE "Hola, esta es una prueba"

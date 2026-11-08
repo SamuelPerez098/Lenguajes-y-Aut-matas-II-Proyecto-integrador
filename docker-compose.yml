@@ -1,0 +1,67 @@
+# CommandFlow: frontend (nginx) + API (FastAPI) + PostgreSQL + Mailpit (SMTP de pruebas)
+#   docker compose up --build
+#   Interfaz:  http://localhost:8080      API/Swagger: http://localhost:8000/docs
+#   Mailpit:   http://localhost:8025      (bandeja de los correos enviados)
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-commandflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-commandflow}
+      POSTGRES_DB: ${POSTGRES_DB:-commandflow}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-commandflow} -d ${POSTGRES_DB:-commandflow}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest   # en producción conviene fijar una versión
+    restart: unless-stopped
+    ports:
+      - "8025:8025"   # interfaz web
+      - "1025:1025"   # SMTP sin autenticación
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-commandflow}:${POSTGRES_PASSWORD:-commandflow}@postgres:5432/${POSTGRES_DB:-commandflow}
+      # Por defecto usa el contenedor mailpit. Para correo real define SMTP_* en el archivo .env
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
+      SMTP_SSL: ${SMTP_SSL:-false}
+      SMTP_FROM: ${SMTP_FROM:-commandflow@localhost}
+      CORS_ORIGINS: http://localhost:8080,http://localhost:5173
+      MAILPIT_UI_URL: http://localhost:8025
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+
+volumes:
+  pgdata:
